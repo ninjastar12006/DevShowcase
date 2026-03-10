@@ -28,7 +28,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/sign-in" element={<SignInPage />} />
+      <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/build" element={<BuildPage />} />
     </Routes>
