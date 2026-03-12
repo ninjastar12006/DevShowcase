@@ -12,7 +12,7 @@ export default function SignInPage() {
         <div className="flex min-h-screen bg-[rgb(25,25,25)]">
             {/* Expanded the main wrapper to max-w-3xl to give the internal components room to stretch */}
             <div className="my-auto mx-auto max-w-3xl w-full p-4">
-                <div className="[--radius:var(--radius-4xl)] [--padding:--spacing(1)] bg-[rgb(75,75,75)] rounded-(--radius) p-(--padding)">
+                {/*<div className="[--radius:var(--radius-4xl)] [--padding:--spacing(1)] bg-[rgb(75,75,75)] rounded-(--radius) p-(--padding)">
                     <div className="flex flex-col h-auto rounded-[calc(var(--radius)-var(--padding))] bg-[rgb(35,35,35)] p-10 pb-12">
                         
                         <div className="relative w-full h-12 mb-10">
@@ -52,6 +52,33 @@ export default function SignInPage() {
                         </div>
 
                     </div>
+                </div>*/}
+                <div className="flex justify-center w-full">
+                    <SignIn 
+                        forceRedirectUrl="http://localhost:5173/build"
+                        routing="path" 
+                        path="/sign-in" 
+                        signUpUrl="/sign-up" 
+                        appearance={{
+                            baseTheme: dark,
+                            variables: {
+                                fontSize: '.9rem', // Fine-tuned so it's large but fits perfectly
+                                spacingUnit: '1rem',
+                            },
+                            elements: {
+                                rootBox: "w-full flex justify-center",
+                                cardBox: "w-full max-w-[800px]", // Forces Clerk to allow a wider layout
+                                card: "shadow-none bg-transparent w-full max-w-[800px]",
+                                main: "w-full max-w-[800px]",
+                                socialButtonsBlockButton: "w-full",
+                                socialButtonsBlockButtonText: "whitespace-nowrap", // Stops "Continue with GitHub" from clipping
+                                footerAction: "whitespace-nowrap", // Forces "Don't have an account? Sign up" onto one line
+                            },
+                            options: {
+                                logoPlacement: 'outside'
+                            },
+                        }}
+                    />
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ import Lenis from "lenis";
 
 import HomePage from "./pages/HomePage.jsx";
 import SignInPage from "./pages/SignInPage.jsx";
+import SignUpPage from "./pages/SignUpPage.jsx";
 import BuildPage from "./pages/BuildPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 
@@ -29,6 +30,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
+      <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/build" element={<BuildPage />} />
     </Routes>
