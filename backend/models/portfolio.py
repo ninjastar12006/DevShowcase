@@ -11,3 +11,4 @@ class Portfolio(Document):
     about = DictField()
     projects = ListField(DictField())
     involvement = DictField()
+    githubSync = DictField()

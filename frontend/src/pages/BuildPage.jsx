@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { useAuth, UserButton, useUser } from "@clerk/clerk-react";
 import { dark } from "@clerk/themes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/DevShowcaseLogo4.png";
 import templateImage from "../assets/TemplateImage.png";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 export default function BuildPage() {
     // Clerk hooks to grab the token and check auth status
@@ -16,6 +18,12 @@ export default function BuildPage() {
     const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
     const [editingProjectId, setEditingProjectId] = useState(null);
     const [projectInputMode, setProjectInputMode] = useState("github");
+    const [githubStatus, setGithubStatus] = useState({ connected: false, repository_count: 0 });
+    const [githubRepositories, setGithubRepositories] = useState([]);
+    const [selectedGithubRepoIds, setSelectedGithubRepoIds] = useState([]);
+    const [githubLoading, setGithubLoading] = useState(false);
+    const [githubError, setGithubError] = useState("");
+    const [githubMessage, setGithubMessage] = useState("");
 
     const [manualProject, setManualProject] = useState({
         title: "",
@@ -47,6 +55,35 @@ export default function BuildPage() {
     const primaryColor = portfolioData.primaryColor;
     const secondaryColor = portfolioData.secondaryColor;
 
+    useEffect(() => {
+        if (!isLoaded || !isSignedIn) {
+            return;
+        }
+
+        const loadGithubState = async () => {
+            try {
+                const token = await getToken();
+                const statusResponse = await fetch(`${API_BASE_URL}/github/status`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const statusData = await statusResponse.json();
+                setGithubStatus(statusData);
+
+                if (statusData.connected) {
+                    const reposResponse = await fetch(`${API_BASE_URL}/github/repositories`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const reposData = await reposResponse.json();
+                    setGithubRepositories(reposData.repositories || []);
+                }
+            } catch (error) {
+                console.error("Failed to load GitHub state:", error);
+            }
+        };
+
+        loadGithubState();
+    }, [getToken, isLoaded, isSignedIn]);
+
     // --- NEW: SAVE TO MONGODB FUNCTION ---
     const savePortfolio = async () => {
         try {
@@ -65,6 +102,79 @@ export default function BuildPage() {
         } catch (error) {
             console.error("Failed to save:", error);
             alert("Failed to save build to database. Check if your backend is running.");
+        }
+    };
+
+    const connectGithub = async () => {
+        try {
+            setGithubError("");
+            setGithubMessage("");
+            const token = await getToken();
+            const response = await fetch(`${API_BASE_URL}/auth/github/start`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json();
+            window.location.href = data.authorize_url;
+        } catch (error) {
+            console.error("Failed to start GitHub OAuth:", error);
+            setGithubError(error.message || "Unable to connect GitHub right now.");
+        }
+    };
+
+    const syncGithubRepos = async () => {
+        try {
+            setGithubLoading(true);
+            setGithubError("");
+            const token = await getToken();
+            const response = await fetch(`${API_BASE_URL}/github/sync`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json();
+            setGithubRepositories(data.repositories || []);
+            setGithubStatus((currentStatus) => ({
+                ...currentStatus,
+                repository_count: data.repository_count ?? currentStatus.repository_count,
+            }));
+            setGithubMessage("GitHub repositories synced.");
+        } catch (error) {
+            console.error("Failed to sync GitHub repos:", error);
+            setGithubError(error.message || "Unable to sync GitHub repositories.");
+        } finally {
+            setGithubLoading(false);
+        }
+    };
+
+    const importSelectedGithubRepos = async () => {
+        try {
+            if (selectedGithubRepoIds.length === 0) {
+                setGithubError("Select at least one repository first.");
+                return;
+            }
+
+            setGithubLoading(true);
+            setGithubError("");
+            const token = await getToken();
+            const response = await fetch(`${API_BASE_URL}/github/import-selected`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ repo_ids: selectedGithubRepoIds }),
+            });
+            const data = await response.json();
+            setPortfolioData((currentData) => ({
+                ...currentData,
+                projects: data.portfolio?.projects || [],
+            }));
+            setSelectedGithubRepoIds([]);
+            setGithubMessage(`Imported ${data.imported_count || 0} repository${data.imported_count === 1 ? "" : "ies"}.`);
+        } catch (error) {
+            console.error("Failed to import GitHub repos:", error);
+            setGithubError(error.message || "Unable to import repositories.");
+        } finally {
+            setGithubLoading(false);
         }
     };
 
@@ -345,9 +455,84 @@ export default function BuildPage() {
                                         {projectInputMode === "github" ? (
                                             <div className="space-y-3">
                                                 <h2 className="text-lg font-semibold text-white">Import a repository</h2>
-                                                <div className="rounded-xl border border-gray-700 p-4 text-gray-400">
-                                                    Connected repositories will go here
-                                                </div>
+                                                {!githubStatus.connected ? (
+                                                    <div className="space-y-3 rounded-xl border border-gray-700 p-4 text-gray-300">
+                                                        <p>Connect GitHub to load your repositories automatically.</p>
+                                                        <button
+                                                            onClick={connectGithub}
+                                                            className="rounded-lg bg-cyan-600 px-4 py-2 font-medium text-white hover:bg-cyan-500"
+                                                        >
+                                                            Connect GitHub
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center justify-between rounded-xl border border-gray-700 p-4 text-gray-300">
+                                                            <div>
+                                                                <p className="font-medium text-white">Connected as {githubStatus.github_login || "GitHub user"}</p>
+                                                                <p className="text-sm text-gray-400">{githubStatus.repository_count || githubRepositories.length} repositories available</p>
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={syncGithubRepos}
+                                                                    disabled={githubLoading}
+                                                                    className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                                                                >
+                                                                    Sync Now
+                                                                </button>
+                                                                <button
+                                                                    onClick={importSelectedGithubRepos}
+                                                                    disabled={githubLoading}
+                                                                    className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
+                                                                >
+                                                                    Import Selected
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        {githubError && (
+                                                            <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+                                                                {githubError}
+                                                            </div>
+                                                        )}
+                                                        {githubMessage && (
+                                                            <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+                                                                {githubMessage}
+                                                            </div>
+                                                        )}
+                                                        <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                                                            {githubRepositories.length === 0 ? (
+                                                                <div className="rounded-xl border border-dashed border-gray-700 p-4 text-gray-400">
+                                                                    No repositories synced yet.
+                                                                </div>
+                                                            ) : (
+                                                                githubRepositories.map((repo) => (
+                                                                    <label key={repo.repo_id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-700 p-4 text-left hover:bg-white/5">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="mt-1"
+                                                                            checked={selectedGithubRepoIds.includes(repo.repo_id)}
+                                                                            onChange={(e) => {
+                                                                                setSelectedGithubRepoIds((currentIds) =>
+                                                                                    e.target.checked
+                                                                                        ? [...currentIds, repo.repo_id]
+                                                                                        : currentIds.filter((id) => id !== repo.repo_id)
+                                                                                );
+                                                                            }}
+                                                                        />
+                                                                        <div className="flex-1">
+                                                                            <p className="font-semibold text-white">{repo.full_name}</p>
+                                                                            <p className="mt-1 text-sm text-gray-400">{repo.description || "No description provided."}</p>
+                                                                            <p className="mt-2 text-xs text-gray-500">
+                                                                                {repo.language || "Unknown language"}
+                                                                                {repo.stars ? ` · ${repo.stars} stars` : ""}
+                                                                            </p>
+                                                                        </div>
+                                                                    </label>
+                                                                ))
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="space-y-3">

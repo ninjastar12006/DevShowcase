@@ -7,6 +7,7 @@ import SignInPage from "./pages/SignInPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import BuildPage from "./pages/BuildPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
+import GithubCallbackPage from "./pages/GithubCallbackPage.jsx";
 
 export default function App() {
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/build" element={<BuildPage />} />
+      <Route path="/oauth/github/callback" element={<GithubCallbackPage />} />
     </Routes>
   )
 }
