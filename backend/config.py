@@ -8,6 +8,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 MONGODB_URI = os.getenv("MONGODB_URI")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+GITHUB_REPO_CACHE_TTL_SECONDS = int(os.getenv("GITHUB_REPO_CACHE_TTL_SECONDS", "86400"))
 GITHUB_OAUTH_REDIRECT_URI = os.getenv(
     "GITHUB_OAUTH_REDIRECT_URI",
     "http://localhost:8080/auth/github/callback",

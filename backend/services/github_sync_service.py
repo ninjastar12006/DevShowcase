@@ -9,6 +9,8 @@ from models.repository_cache import RepositoryCache
 from services.github_oauth_service import fetch_user_repositories
 from services.token_crypto import decrypt_token
 
+from config import GITHUB_REPO_CACHE_TTL_SECONDS
+from services.redis_cache_service import delete_key, get_json, set_json
 
 def _parse_datetime(value: Any):
     if not value:
@@ -65,8 +67,28 @@ def _document_to_dict(document: RepositoryCache) -> Dict[str, Any]:
         "synced_at": document.synced_at.isoformat() if document.synced_at else None,
     }
 
+def _redis_repo_key(clerk_id: str) -> str:
+    return f"github_repos:{clerk_id}"
 
-async def sync_github_repositories(clerk_id: str) -> List[Dict[str, Any]]:
+def _is_cache_fresh(last_synced_at: datetime | None) -> bool:
+    if not last_synced_at: return False
+    age_seconds = (datetime.now(timezone.utc) - last_synced_at).total_seconds()
+    return age_seconds < GITHUB_REPO_CACHE_TTL_SECONDS
+
+async def sync_github_repositories(clerk_id: str, force_refresh: bool = False) -> List[Dict[str, Any]]:
+    redis_key = _redis_repo_key(clerk_id)
+
+    if not force_refresh:
+        redis_cached = get_json(redis_key)
+        if redis_cached is not None:
+            return redis_cached
+
+        latest_repo = RepositoryCache.objects(clerk_id=clerk_id).order_by("-synced_at").first()
+        if latest_repo and _is_cache_fresh(latest_repo.synced_at):
+            mongo_cached = list_cached_repositories(clerk_id)
+            set_json(redis_key, mongo_cached, GITHUB_REPO_CACHE_TTL_SECONDS)
+            return mongo_cached
+
     connection = GitHubConnection.objects(clerk_id=clerk_id).first()
     if not connection:
         raise ValueError("GitHub is not connected for this user")
@@ -78,10 +100,14 @@ async def sync_github_repositories(clerk_id: str) -> List[Dict[str, Any]]:
     for repo in repositories:
         _repo_to_document(clerk_id, repo).save()
 
+    cached_repositories = list_cached_repositories(clerk_id)
+
+    set_json(redis_key, cached_repositories, GITHUB_REPO_CACHE_TTL_SECONDS)
+
     connection.updated_at = datetime.now(timezone.utc)
     connection.save()
 
-    return repositories
+    return cached_repositories
 
 
 def list_cached_repositories(clerk_id: str) -> List[Dict[str, Any]]:
@@ -167,3 +193,5 @@ def import_selected_repositories(clerk_id: str, repo_ids: Iterable[int]) -> Dict
 
 def disconnect_github(clerk_id: str) -> None:
     GitHubConnection.objects(clerk_id=clerk_id).delete()
+    RepositoryCache.objects(clerk_id=clerk_id).delete()
+    delete_key(_redis_repo_key(clerk_id))

@@ -174,39 +174,22 @@ async def github_repositories(
     user=Depends(get_current_user),
 ):
     clerk_id = user["payload"]["sub"]
-    if force_sync:
-        repositories = await sync_github_repositories(clerk_id)
-        return {
-            "success": True,
-            "repository_count": len(repositories),
-            "repositories": repositories,
-        }
-
-    cached_repositories = list_cached_repositories(clerk_id)
-    if not cached_repositories:
-        repositories = await sync_github_repositories(clerk_id)
-        return {
-            "success": True,
-            "repository_count": len(repositories),
-            "repositories": repositories,
-        }
-
+    repositories = await sync_github_repositories(clerk_id, force_refresh=force_sync)
     return {
         "success": True,
-        "repository_count": len(cached_repositories),
-        "repositories": cached_repositories,
+        "repository_count": len(repositories),
+        "repositories": repositories,
     }
 
 
 @app.post("/github/sync", response_model=GitHubSyncResponse)
 async def github_sync(user=Depends(get_current_user)):
     clerk_id = user["payload"]["sub"]
-    repositories = await sync_github_repositories(clerk_id)
-    cached_repositories = list_cached_repositories(clerk_id)
+    repositories = await sync_github_repositories(clerk_id, force_refresh=True)
     return {
         "success": True,
-        "repository_count": len(cached_repositories),
-        "repositories": cached_repositories or repositories,
+        "repository_count": len(repositories),
+        "repositories": repositories,
     }
 
 
