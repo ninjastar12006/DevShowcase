@@ -56,7 +56,7 @@ app = FastAPI(lifespan=lifespan)
 # CORS configuration to allow requests from the Vite frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -120,6 +120,18 @@ async def get_portfolio(
     portfolio = Portfolio.objects(clerk_id=clerk_id).first()
     if not portfolio:
         raise HTTPException(status_code=404, detail="No portfolio found for this user.")
+        
+    return json.loads(portfolio.to_json())
+
+
+# --- NEW: PUBLIC RECRUITER ROUTE ---
+@app.get("/api/public/portfolio/{username}")
+async def get_public_portfolio(username: str):
+    # Find the portfolio by the username
+    portfolio = Portfolio.objects(username=username).first()
+    
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
         
     return json.loads(portfolio.to_json())
 

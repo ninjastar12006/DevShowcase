@@ -141,7 +141,7 @@ export default function BuildPage() {
         certifications: 1,
         volunteer: 2,
     };
-    const sortedVisibleSections = [...portfolioData.involvement.visibleSections].sort(
+    const sortedVisibleSections = [...(portfolioData.involvement?.visibleSections || [])].sort(
         (a, b) => (sectionPriority[b] || 0) - (sectionPriority[a] || 0)
     );
     const getLayoutClasses = () => {
@@ -721,9 +721,19 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                         template: savedData.template || prevData.template,
                         primaryColor: savedData.primaryColor || prevData.primaryColor,
                         secondaryColor: savedData.secondaryColor || prevData.secondaryColor,
-                        about: savedData.about || prevData.about,
+                        about: { ...prevData.about, ...(savedData.about || {}) },
                         projects: savedData.projects || prevData.projects,
-                        involvement: savedData.involvement || prevData.involvement
+                        
+                        involvement: {
+                            visibleSections: savedData.involvement?.visibleSections || prevData.involvement.visibleSections || [],
+                            education: savedData.involvement?.education || prevData.involvement.education || [],
+                            skills: savedData.involvement?.skills || prevData.involvement.skills || [],
+                            clubs: savedData.involvement?.clubs || prevData.involvement.clubs || [],
+                            workExperience: savedData.involvement?.workExperience || prevData.involvement.workExperience || [],
+                            certifications: savedData.involvement?.certifications || prevData.involvement.certifications || [],
+                            awards: savedData.involvement?.awards || prevData.involvement.awards || [],
+                            volunteer: savedData.involvement?.volunteer || prevData.involvement.volunteer || [],
+                        }
                     }));
                 }
             } catch (error) {
@@ -989,25 +999,56 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                         </div>
 
 <div className="pt-5 px-2 space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
+                           <div className="grid grid-cols-2 gap-3">
+                               <button
                                     onClick={savePortfolio}
                                     className="rounded-xl border border-cyan-600 bg-[rgb(35,35,35)] px-4 py-2 font-semibold text-white transition hover:bg-[rgb(45,45,45)]"
                                 >
                                     Save
                                 </button>
 
+                                {/* --- UPDATED PREVIEW BUTTON --- */}
                                 <button
+                                    onClick={() => {
+                                        // 1. Save current unsaved state to session storage
+                                        sessionStorage.setItem("portfolioPreview", JSON.stringify(portfolioData));
+                                        // 2. Open the preview route in a new tab
+                                        window.open("/preview", "_blank");
+                                    }}
                                     className="rounded-xl border border-cyan-600 bg-[rgb(35,35,35)] px-4 py-2 font-semibold text-white transition hover:bg-[rgb(45,45,45)]"
                                 >
                                     Preview
                                 </button>
                             </div>
+                            
+                            {/* --- UPDATED PUBLISH BUTTON --- */}
                             <button
+                                onClick={() => {
+                                    // Generate the clean URL using their Clerk username or ID
+                                    const slug = user?.username || user?.id; 
+                                    const publishUrl = `${window.location.origin}/p/${slug}`;
+                                    
+                                    // Copy to clipboard and notify
+                                    navigator.clipboard.writeText(publishUrl);
+                                    alert(`Portfolio published! Link copied to clipboard:\n${publishUrl}`);
+                                    
+                                    // Open it in a new tab so they can see what recruiters see!
+                                    window.open(publishUrl, '_blank');
+                                }}
                                 className="w-full rounded-xl bg-cyan-600 px-4 py-2.5 font-bold text-white transition hover:bg-cyan-500 active:scale-[0.98]"
                             >
                                 Publish
                             </button>
+
+                            {/* --- SECRET ADMIN BUTTON --- */}
+                            {user?.publicMetadata?.role === "admin" && (
+                                <button
+                                    onClick={() => navigate('/admin-dashboard')}
+                                    className="mt-2 w-full rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 font-bold text-purple-300 transition hover:bg-purple-500/20"
+                                >
+                                    Admin Dashboard
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -2,8 +2,8 @@ from mongoengine import Document, StringField, ListField, DictField
 
 class Portfolio(Document):
     clerk_id = StringField(required=True, unique=True) 
-    email = StringField()      # <-- NEW
-    username = StringField()   # <-- NEW
+    email = StringField()      
+    username = StringField()   
     
     template = StringField(default="The Minimalist")
     primaryColor = StringField()
