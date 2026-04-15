@@ -18,6 +18,7 @@ export default function BuildPage() {
     const [backendResponse, setBackendResponse] = useState(null);
     const navigate = useNavigate();
     const { user } = useUser();
+    
     const [activePage, setActivePage] = useState("projects");
     const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
     const [editingProjectId, setEditingProjectId] = useState(null);
@@ -694,16 +695,41 @@ export default function BuildPage() {
     const primaryColor = portfolioData.primaryColor;
     const secondaryColor = portfolioData.secondaryColor;
 
-    const displayName = portfolioData.about.name.trim() || "Your Name";
+const displayName = portfolioData.about.name.trim() || "Your Name";
     const displayYear = portfolioData.about.year.trim() || "Year";
     const displayMajor = portfolioData.about.major.trim() || "Major";
     const displayCollege = portfolioData.about.college.trim() || "College";
     const displayBio = portfolioData.about.paragraph.trim() || "Your bio goes here.";
 
     useEffect(() => {
-        if (!isLoaded || !isSignedIn) {
-            return;
-        }
+        if (!isLoaded || !isSignedIn) return;
+
+        const fetchExistingPortfolio = async () => {
+            try {
+                const token = await getToken();
+                const response = await fetch("http://localhost:8080/get-portfolio", {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const savedData = await response.json();
+                    setPortfolioData(prevData => ({
+                        ...prevData,
+                        template: savedData.template || prevData.template,
+                        primaryColor: savedData.primaryColor || prevData.primaryColor,
+                        secondaryColor: savedData.secondaryColor || prevData.secondaryColor,
+                        about: savedData.about || prevData.about,
+                        projects: savedData.projects || prevData.projects,
+                        involvement: savedData.involvement || prevData.involvement
+                    }));
+                }
+            } catch (error) {
+                console.error("Error fetching existing portfolio:", error);
+            }
+        };
 
         const loadGithubState = async () => {
             try {
@@ -726,20 +752,29 @@ export default function BuildPage() {
             }
         };
 
+        fetchExistingPortfolio();
         loadGithubState();
-    }, [getToken, isLoaded, isSignedIn]);
+    }, [isLoaded, isSignedIn, getToken]);
 
-    // --- NEW: SAVE TO MONGODB FUNCTION ---
+    // --- SAVE TO MONGODB FUNCTION ---
     const savePortfolio = async () => {
         try {
             const token = await getToken();
+            
+            // Merge the portfolio data with the user's Clerk profile info
+            const payload = {
+                ...portfolioData,
+                email: user?.primaryEmailAddress?.emailAddress || "",
+                username: user?.username || user?.fullName || "Developer",
+            };
+
             const response = await fetch("http://localhost:8080/save-portfolio", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify(portfolioData)
+                body: JSON.stringify(payload) 
             });
             const data = await response.json();
             alert(data.message);
@@ -953,7 +988,7 @@ export default function BuildPage() {
                             />
                         </div>
 
-                        <div className="pt-5 px-2 space-y-3">
+<div className="pt-5 px-2 space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={savePortfolio}
@@ -968,7 +1003,6 @@ export default function BuildPage() {
                                     Preview
                                 </button>
                             </div>
-
                             <button
                                 className="w-full rounded-xl bg-cyan-600 px-4 py-2.5 font-bold text-white transition hover:bg-cyan-500 active:scale-[0.98]"
                             >
@@ -2668,23 +2702,6 @@ export default function BuildPage() {
                                 )}
                             </div>
                         )}
-
-                
-                    {/* <button 
-                        onClick={testBackend}
-                        className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-                    >
-                        Test Backend Connection
-                    </button>
-                    
-                    {backendResponse && (
-                        <div className="mt-8 p-6 bg-[rgb(35,35,35)] rounded-xl border border-gray-600 shadow-lg max-w-2xl">
-                            <h2 className="text-xl mb-4 font-semibold text-gray-300">FastAPI Response:</h2>
-                            <pre className="text-green-400 overflow-x-auto text-sm">
-                                {JSON.stringify(backendResponse, null, 2)}
-                            </pre>
-                        </div>
-                    )} */}
                 </div>
             </main>
             

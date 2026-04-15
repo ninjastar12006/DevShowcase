@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import logo from "../assets/DevShowcaseLogo3.png";
 import logoText from "../assets/DevShowcaseLogo3Text.png";
 import logoBG from "../assets/DevShowcaseBGLogo.png";
@@ -32,12 +33,26 @@ export default function HomePage() {
                             after:h-[2px] after:w-full after:bg-white after:rounded-full after:opacity-80
                             after:scale-x-0 hover:after:scale-x-100
                             after:origin-center after:transition-transform after:duration-500">About</Link>
-                    <Link to="/sign-in" className="
-                            relative text-slate-400 hover:text-white
-                            after:content-[''] after:absolute after:left-0 after:-bottom-1
-                            after:h-[2px] after:w-full after:bg-white after:rounded-full after:opacity-80
-                            after:scale-x-0 hover:after:scale-x-100
-                            after:origin-center after:transition-transform after:duration-500">Sign In</Link>
+                    
+                    {/* Only shows if the user is NOT logged in */}
+                    <SignedOut>
+                        <Link to="/sign-in" className="
+                                relative text-slate-400 hover:text-white
+                                after:content-[''] after:absolute after:left-0 after:-bottom-1
+                                after:h-[2px] after:w-full after:bg-white after:rounded-full after:opacity-80
+                                after:scale-x-0 hover:after:scale-x-100
+                                after:origin-center after:transition-transform after:duration-500">Sign In</Link>
+                    </SignedOut>
+
+                    {/* Only shows if the user IS logged in */}
+                    <SignedIn>
+                        <Link to="/build" className="
+                                relative text-slate-400 hover:text-white
+                                after:content-[''] after:absolute after:left-0 after:-bottom-1
+                                after:h-[2px] after:w-full after:bg-white after:rounded-full after:opacity-80
+                                after:scale-x-0 hover:after:scale-x-100
+                                after:origin-center after:transition-transform after:duration-500">Go to Builder</Link>
+                    </SignedIn>
                 </div>
                 <div className="pointer-events-none absolute left-0 right-0 top-full h-32 bg-gradient-to-b from-black via-black/50 to-black/0"/>
             </nav>
