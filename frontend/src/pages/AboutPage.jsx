@@ -15,7 +15,7 @@ export default function AboutPage() {
             <nav className="relative flex text-xl sticky top-0 h-16 w-full pl-4 pr-6 py-4 bg-black z-50 justify-between items-center">
                 <div>
                     <Link className="flex items-center" to="/">
-                        <img src={logo} className="h-10 w-auto hover:h-12"/>
+                        <img src={logo} className="h-10 w-auto"/>
                         <img src={logoText} className="h-8 w-auto"/>
                     </Link>
                 </div>
