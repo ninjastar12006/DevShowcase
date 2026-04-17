@@ -144,7 +144,10 @@ export default function BuildPage() {
 
     const [manualProject, setManualProject] = useState({
         title: "",
+        role: "",
+        date: "",
         description: "",
+        keyContributions: "",
         githubUrl: "",
         liveUrl: "",
         technologies: "",
@@ -1074,17 +1077,34 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                             
                             {/* --- UPDATED PUBLISH BUTTON --- */}
                             <button
-                                onClick={() => {
-                                    // Generate the clean URL using their Clerk username or ID
-                                    const slug = user?.username || user?.id; 
-                                    const publishUrl = `${window.location.origin}/p/${slug}`;
-                                    
-                                    // Copy to clipboard and notify
-                                    navigator.clipboard.writeText(publishUrl);
-                                    alert(`Portfolio published! Link copied to clipboard:\n${publishUrl}`);
-                                    
-                                    // Open it in a new tab so they can see what recruiters see!
-                                    window.open(publishUrl, '_blank');
+                                onClick={async () => {
+                                    try {
+                                        const token = await getToken();
+
+                                        const response = await fetch(`${API_BASE_URL}/publish-portfolio`, {
+                                            method: "POST",
+                                            headers: {
+                                                Authorization: `Bearer ${token}`,
+                                            },
+                                        });
+
+                                        const data = await response.json();
+
+                                        if (!response.ok) {
+                                            throw new Error(data.detail || "Failed to publish portfolio.");
+                                        }
+
+                                        const slug = user?.username || user?.id;
+                                        const publishUrl = `${window.location.origin}/p/${slug}`;
+
+                                        await navigator.clipboard.writeText(publishUrl);
+                                        alert(`Portfolio published! Link copied to clipboard:\n${publishUrl}`);
+
+                                        window.open(publishUrl, "_blank");
+                                    } catch (error) {
+                                        console.error("Failed to publish portfolio:", error);
+                                        alert("Failed to publish portfolio.");
+                                    }
                                 }}
                                 className="w-full rounded-xl bg-cyan-600 px-4 py-2.5 font-bold text-white transition hover:bg-cyan-500 active:scale-[0.98]"
                             >
@@ -1159,7 +1179,7 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                             </div>
                         </div>
                         
-                        {activePage === "about" && selectedTemplate === "classic" && (
+                        {activePage === "about" && (
                             <div className="p-0 flex flex-col min-h-[778px]">
                                 <div className="mt-2 flex gap-2 max-w-4xl mx-auto justify-center items-center">
                                     <input
@@ -1490,7 +1510,10 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                             setProjectInputMode("github");
                                             setManualProject({
                                                 title: "",
+                                                role: "",
+                                                date: "",
                                                 description: "",
+                                                keyContributions: "",
                                                 githubUrl: "",
                                                 liveUrl: "",
                                                 technologies: "",
@@ -1521,7 +1544,10 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                                             setEditingProjectId(project.id);
                                                             setManualProject({
                                                                 title: project.title || "",
+                                                                role: project.role || "",
+                                                                date: project.date || "",
                                                                 description: project.description || "",
+                                                                keyContributions: project.keyContributions || "",
                                                                 githubUrl: project.githubUrl || "",
                                                                 liveUrl: project.liveUrl || "",
                                                                 technologies: project.technologies || "",
@@ -1532,7 +1558,7 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                                             setProjectInputMode("manual");
                                                             setIsAddProjectOpen(true);
                                                         }}
-                                                        className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-sm text-white backdrop-blur-sm hover:bg-black/60"
+                                                        className="z-50 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-sm text-white backdrop-blur-sm hover:bg-black/10"
                                                     >
                                                         Edit
                                                     </button>
@@ -1548,7 +1574,7 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                                         Delete
                                                     </button>
                                                 </div>
-                                                <div className={`flex flex-col justify-center ${hasMedia ? (index % 2 === 1 ? "pr-8 order-2" : "pl-8 order-1") : "col-span-2 max-w-5xl mx-auto"}`}>
+                                                <div className={`flex flex-col justify-center ${hasMedia ? (index % 2 === 1 ? "max-w-7xl mx-auto pr-8 order-2" : "max-w-7xl mx-auto pl-8 order-1") : "col-span-2 max-w-5xl mx-auto"}`}>
                                                     <div className="flex items-center gap-4">
                                                         <p className="text-2xl font-bold text-white">
                                                             {project.title || `Project ${index + 1}`}
@@ -1668,6 +1694,438 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                 </div>
                             </div>
                         )}
+                        {activePage === "projects" && selectedTemplate === "minimalist" && (
+                            <div className="p-0">
+                                <div className="px-8 -mt-12">
+                                    <button
+                                        onClick={() => {
+                                            setEditingProjectId(null);
+                                            setProjectInputMode("github");
+                                            setManualProject({
+                                                title: "",
+                                                role: "",
+                                                date: "",
+                                                description: "",
+                                                keyContributions: "",
+                                                githubUrl: "",
+                                                liveUrl: "",
+                                                technologies: "",
+                                                mediaType: "youtube",
+                                                youtubeUrl: "",
+                                                images: [],
+                                            });
+                                            setIsAddProjectOpen(true);
+                                        }}
+                                        className="relative z-30 inline-block cursor-pointer rounded-xl border border-cyan-600 bg-[rgb(35,35,35)] px-4 py-2 font-semibold text-white transition hover:bg-[rgb(45,45,45)]"
+                                    >
+                                        + Add Project
+                                    </button>
+                                </div>
+
+                                <div className="px-8 py-10">
+                                    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 auto-rows-[220px]">
+                                        {portfolioData.projects.map((project, index) => (
+                                            <div
+                                                key={project.id || index}
+                                                className="group relative rounded-2xl border bg-[rgb(35,35,35)] p-6 transition hover:-translate-y-1 hover:bg-[rgb(42,42,42)]"
+                                                style={{ borderColor: primaryColor }}
+                                            >
+                                                <div className="absolute right-4 top-4 flex gap-2 opacity-0 transition group-hover:opacity-100">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingProjectId(project.id);
+                                                            setManualProject({
+                                                                title: project.title || "",
+                                                                role: project.role || "",
+                                                                date: project.date || "",
+                                                                description: project.description || "",
+                                                                keyContributions: project.keyContributions || "",
+                                                                githubUrl: project.githubUrl || "",
+                                                                liveUrl: project.liveUrl || "",
+                                                                technologies: project.technologies || "",
+                                                                mediaType: project.mediaType || "youtube",
+                                                                youtubeUrl: project.youtubeUrl || "",
+                                                                images: project.images || [],
+                                                            });
+                                                            setProjectInputMode("manual");
+                                                            setIsAddProjectOpen(true);
+                                                        }}
+                                                        className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-sm text-white backdrop-blur-sm hover:bg-black/60"
+                                                    >
+                                                        Edit
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() =>
+                                                            setPortfolioData({
+                                                                ...portfolioData,
+                                                                projects: portfolioData.projects.filter((p) => p.id !== project.id),
+                                                            })
+                                                        }
+                                                        className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1 text-sm text-red-300 backdrop-blur-sm hover:bg-red-500/20"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+
+                                                <a
+                                                    href={project.githubUrl || "#"}
+                                                    target={project.githubUrl ? "_blank" : undefined}
+                                                    rel={project.githubUrl ? "noreferrer" : undefined}
+                                                    className={`block h-full ${project.githubUrl ? "cursor-pointer" : "cursor-default"}`}
+                                                >
+                                                    <div className="flex h-full flex-col justify-between">
+                                                        <div>
+                                                            <h2 className="text-2xl font-bold text-white">
+                                                                {project.title || `Project ${index + 1}`}
+                                                            </h2>
+
+                                                            <p className="mt-4 text-sm leading-6 text-gray-400 overflow-hidden">
+                                                                {project.description || "No description provided."}
+                                                            </p>
+                                                        </div>
+
+                                                        {project.githubUrl && (
+                                                            <p
+                                                                className="mt-4 text-sm font-medium transition group-hover:opacity-80"
+                                                                style={{ color: secondaryColor }}
+                                                            >
+                                                                View on GitHub →
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activePage === "projects" && selectedTemplate === "technical" && (
+                            <div className="p-0">
+                                <div className="px-8 -mt-12">
+                                    <button
+                                        onClick={() => {
+                                            setEditingProjectId(null);
+                                            setProjectInputMode("github");
+                                            setManualProject({
+                                                title: "",
+                                                role: "",
+                                                date: "",
+                                                description: "",
+                                                keyContributions: "",
+                                                githubUrl: "",
+                                                liveUrl: "",
+                                                technologies: "",
+                                                mediaType: "youtube",
+                                                youtubeUrl: "",
+                                                images: [],
+                                            });
+                                            setIsAddProjectOpen(true);
+                                        }}
+                                        className="relative z-30 inline-block cursor-pointer rounded-xl border border-cyan-600 bg-[rgb(35,35,35)] px-4 py-2 font-semibold text-white transition hover:bg-[rgb(45,45,45)]"
+                                    >
+                                        + Add Project
+                                    </button>
+                                </div>
+
+                                <div className="mt-6">
+                                    {portfolioData.projects.map((project, index) => {
+                                        const hasMedia =
+                                            (project.mediaType === "images" && project.images?.length > 0) ||
+                                            (project.mediaType === "youtube" && project.youtubeUrl);
+
+                                        const contributionItems = (project.keyContributions || "")
+                                            .split("\n")
+                                            .map((item) => item.trim())
+                                            .filter(Boolean);
+
+                                        return (
+                                            <div
+                                                key={`${project.id}-${index}`}
+                                                className={`group relative grid grid-cols-2 gap-8 p-8 ${
+                                                    index % 2 === 1 ? "bg-[rgb(40,40,40)]" : "bg-[rgb(25,25,25)]"
+                                                }`}
+                                            >
+                                                <div className="absolute right-4 top-4 flex gap-2 opacity-0 transition group-hover:opacity-100">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingProjectId(project.id);
+                                                            setManualProject({
+                                                                title: project.title || "",
+                                                                role: project.role || "",
+                                                                date: project.date || "",
+                                                                description: project.description || "",
+                                                                keyContributions: project.keyContributions || "",
+                                                                githubUrl: project.githubUrl || "",
+                                                                liveUrl: project.liveUrl || "",
+                                                                technologies: project.technologies || "",
+                                                                mediaType: project.mediaType || "youtube",
+                                                                youtubeUrl: project.youtubeUrl || "",
+                                                                images: project.images || [],
+                                                            });
+                                                            setProjectInputMode("manual");
+                                                            setIsAddProjectOpen(true);
+                                                        }}
+                                                        className="z-50 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-sm text-white backdrop-blur-sm hover:bg-black/10"
+                                                    >
+                                                        Edit
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() =>
+                                                            setPortfolioData({
+                                                                ...portfolioData,
+                                                                projects: portfolioData.projects.filter((p) => p.id !== project.id),
+                                                            })
+                                                        }
+                                                        className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1 text-sm text-red-300 backdrop-blur-sm hover:bg-red-500/20"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+
+                                                <div
+                                                    className={`flex flex-col justify-center items-center ${
+                                                        hasMedia
+                                                            ? index % 2 === 1
+                                                                ? "pr-0 order-2"
+                                                                : "pl-36 order-1"
+                                                            : "col-span-2 max-w-5xl mx-auto"
+                                                    }`}
+                                                >
+                                                    {contributionItems.length > 0 ? (
+                                                        <div className="w-full max-w-2xl">
+                                                            <div className="grid grid-cols-2 gap-8">
+                                                                <div>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <p className="text-2xl font-bold text-white">
+                                                                            {project.title || `Project ${index + 1}`}
+                                                                        </p>
+
+                                                                        <div className="flex items-center gap-3">
+                                                                            {project.githubUrl && (
+                                                                                <a
+                                                                                    href={project.githubUrl}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/8 transition hover:scale-105 hover:bg-white/12"
+                                                                                >
+                                                                                    <img src={githubLogo} className="h-7 w-7" alt="GitHub" />
+                                                                                </a>
+                                                                            )}
+
+                                                                            {project.liveUrl && (
+                                                                                <a
+                                                                                    href={project.liveUrl}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/8 transition hover:scale-105 hover:bg-white/12"
+                                                                                >
+                                                                                    <img src={urlIcon} className="h-6 w-6" alt="Live site" />
+                                                                                </a>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {project.date && (
+                                                                        <p className="mt-2 text-sm font-medium" style={{ color: primaryColor }}>
+                                                                            {project.date}
+                                                                        </p>
+                                                                    )}
+
+                                                                    {project.description && (
+                                                                        <p className="mt-4 text-base leading-7 text-gray-400 text-justify">
+                                                                            {project.description}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+
+                                                                <div>
+                                                                    {project.role && (
+                                                                        <p
+                                                                            className="text-sm font-semibold uppercase tracking-wide"
+                                                                            style={{ color: primaryColor }}
+                                                                        >
+                                                                            {project.role}
+                                                                        </p>
+                                                                    )}
+
+                                                                    <ul className="mt-3 space-y-2 text-sm leading-6 text-gray-400">
+                                                                        {contributionItems.map((item, itemIndex) => (
+                                                                            <li key={itemIndex} className="flex gap-2">
+                                                                                <span style={{ color: secondaryColor }}>•</span>
+                                                                                <span>{item}</span>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+
+                                                            {project.technologies && (
+                                                                <div className="mt-6 flex flex-wrap gap-2">
+                                                                    {project.technologies.split(",").map((tech, techIndex) => (
+                                                                        <span
+                                                                            key={techIndex}
+                                                                            className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-sm"
+                                                                            style={{ color: secondaryColor }}
+                                                                        >
+                                                                            {tech.trim()}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="flex items-center gap-4">
+                                                                <p className="text-2xl font-bold text-white">
+                                                                    {project.title || `Project ${index + 1}`}
+                                                                </p>
+
+                                                                <div className="flex items-center gap-3">
+                                                                    {project.githubUrl && (
+                                                                        <a
+                                                                            href={project.githubUrl}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/8 transition hover:scale-105 hover:bg-white/12"
+                                                                        >
+                                                                            <img src={githubLogo} className="h-7 w-7" alt="GitHub" />
+                                                                        </a>
+                                                                    )}
+
+                                                                    {project.liveUrl && (
+                                                                        <a
+                                                                            href={project.liveUrl}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/8 transition hover:scale-105 hover:bg-white/12"
+                                                                        >
+                                                                            <img src={urlIcon} className="h-6 w-6" alt="Live site" />
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {project.date && (
+                                                                <p className="mt-2 text-sm font-medium" style={{ color: primaryColor }}>
+                                                                    {project.date}
+                                                                </p>
+                                                            )}
+
+                                                            {project.role && (
+                                                                <p
+                                                                    className="mt-2 text-sm font-semibold uppercase tracking-wide"
+                                                                    style={{ color: primaryColor }}
+                                                                >
+                                                                    {project.role}
+                                                                </p>
+                                                            )}
+
+                                                            {project.description && (
+                                                                <p className="mt-4 text-base leading-7 text-gray-400 text-justify">
+                                                                    {project.description}
+                                                                </p>
+                                                            )}
+
+                                                            {project.technologies && (
+                                                                <div className="mt-4 flex flex-wrap gap-2">
+                                                                    {project.technologies.split(",").map((tech, techIndex) => (
+                                                                        <span
+                                                                            key={techIndex}
+                                                                            className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-sm"
+                                                                            style={{ color: secondaryColor }}
+                                                                        >
+                                                                            {tech.trim()}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                <div
+                                                    className={`flex flex-col justify-center ${
+                                                        index % 2 === 1 ? "items-center order-1" : "items-center order-2"
+                                                    }`}
+                                                >
+                                                    {project.mediaType === "youtube" && project.youtubeUrl && (
+                                                        <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-gray-700 bg-[rgb(20,20,20)]">
+                                                            <iframe
+                                                                src={getYouTubeEmbedUrl(project.youtubeUrl)}
+                                                                title={`${project.title || "Project"} video`}
+                                                                className="aspect-video w-full"
+                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                allowFullScreen
+                                                            />
+                                                        </div>
+                                                    )}
+
+                                                    {project.mediaType === "images" && project.images?.length > 0 && (() => {
+                                                        const currentIndex = activeImageIndexes[project.id] || 0;
+                                                        const prevIndex =
+                                                            currentIndex === 0 ? project.images.length - 1 : currentIndex - 1;
+                                                        const nextIndex =
+                                                            currentIndex === project.images.length - 1 ? 0 : currentIndex + 1;
+
+                                                        const currentImage = project.images[currentIndex];
+                                                        const imageSrc =
+                                                            typeof currentImage === "string" && currentImage.trim() !== ""
+                                                                ? currentImage
+                                                                : "";
+
+                                                        if (!imageSrc) return null;
+
+                                                        return (
+                                                            <div className="w-full max-w-xl">
+                                                                <div className="relative">
+                                                                    <img
+                                                                        src={imageSrc}
+                                                                        alt="Project preview"
+                                                                        className="h-72 w-full rounded-2xl object-cover border border-gray-700"
+                                                                    />
+
+                                                                    {project.images.length > 1 && (
+                                                                        <div>
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    setActiveImageIndexes({
+                                                                                        ...activeImageIndexes,
+                                                                                        [project.id]: prevIndex,
+                                                                                    })
+                                                                                }
+                                                                                className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                                                                            >
+                                                                                ←
+                                                                            </button>
+
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    setActiveImageIndexes({
+                                                                                        ...activeImageIndexes,
+                                                                                        [project.id]: nextIndex,
+                                                                                    })
+                                                                                }
+                                                                                className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                                                                            >
+                                                                                →
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         {isAddProjectOpen && (
                             <div className="z-50 fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                                 <div className="w-full max-w-2xl rounded-2xl bg-[rgb(25,25,25)] px-6 pb-6 pt-2 border border-gray-700">
@@ -1678,7 +2136,10 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                                 setEditingProjectId(null);
                                                 setManualProject({
                                                     title: "",
+                                                    role: "",
+                                                    date: "",
                                                     description: "",
+                                                    keyContributions: "",
                                                     githubUrl: "",
                                                     liveUrl: "",
                                                     technologies: "",
@@ -1810,82 +2271,134 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                             </div>
                                         ) : (
                                             <div className="space-y-3">
-                                                <div className="space-y-2">
-                                                    <label className="text-sm font-medium text-gray-300">Project Title</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Enter project title"
-                                                        className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
-                                                        value={manualProject.title}
-                                                        onChange={(e) =>
-                                                            setManualProject({
-                                                                ...manualProject,
-                                                                title: e.target.value,
-                                                            })
-                                                        }
-                                                    />
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">Project Title</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter project title"
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
+                                                            value={manualProject.title}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    title: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">Role</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Lead Developer"
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
+                                                            value={manualProject.role}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    role: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-sm font-medium text-gray-300">Description</label>
-                                                    <textarea
-                                                        placeholder="Enter project description"
-                                                        rows={4}
-                                                        className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none resize-none"
-                                                        value={manualProject.description}
-                                                        onChange={(e) =>
-                                                            setManualProject({
-                                                                ...manualProject,
-                                                                description: e.target.value,
-                                                            })
-                                                        }
-                                                    />
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">Date</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Spring 2026"
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
+                                                            value={manualProject.date}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    date: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">Technologies</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="React, Tailwind, FastAPI, etc."
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
+                                                            value={manualProject.technologies}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    technologies: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-sm font-medium text-gray-300">GitHub URL</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Paste GitHub repository link"
-                                                        className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
-                                                        value={manualProject.githubUrl}
-                                                        onChange={(e) =>
-                                                            setManualProject({
-                                                                ...manualProject,
-                                                                githubUrl: e.target.value,
-                                                            })
-                                                        }
-                                                    />
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">Description</label>
+                                                        <textarea
+                                                            placeholder="Enter project description"
+                                                            rows={4}
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none resize-none"
+                                                            value={manualProject.description}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    description: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">Key Contributions</label>
+                                                        <textarea
+                                                            placeholder={`Built authentication flow\nIntegrated GitHub API\nDesigned responsive UI`}
+                                                            rows={4}
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none resize-none"
+                                                            value={manualProject.keyContributions}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    keyContributions: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-sm font-medium text-gray-300">Live URL</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Paste deployed project link"
-                                                        className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
-                                                        value={manualProject.liveUrl}
-                                                        onChange={(e) =>
-                                                            setManualProject({
-                                                                ...manualProject,
-                                                                liveUrl: e.target.value,
-                                                            })
-                                                        }
-                                                    />
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">GitHub URL</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Paste GitHub repository link"
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
+                                                            value={manualProject.githubUrl}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    githubUrl: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium text-gray-300">Live URL</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Paste deployed project link"
+                                                            className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
+                                                            value={manualProject.liveUrl}
+                                                            onChange={(e) =>
+                                                                setManualProject({
+                                                                    ...manualProject,
+                                                                    liveUrl: e.target.value,
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-sm font-medium text-gray-300">Technologies</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="React, Tailwind, FastAPI, etc."
-                                                        className="w-full rounded-lg border border-gray-700 bg-[rgb(35,35,35)] px-4 py-2 text-white placeholder-gray-500 outline-none"
-                                                        value={manualProject.technologies}
-                                                        onChange={(e) =>
-                                                            setManualProject({
-                                                                ...manualProject,
-                                                                technologies: e.target.value,
-                                                            })
-                                                        }
-                                                    />
-                                                </div>
-
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-medium text-gray-300">Media Type</label>
                                                     <select
@@ -1947,10 +2460,16 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                                             setEditingProjectId(null);
                                                             setManualProject({
                                                                 title: "",
+                                                                role: "",
+                                                                date: "",
                                                                 description: "",
+                                                                keyContributions: "",
                                                                 githubUrl: "",
                                                                 liveUrl: "",
                                                                 technologies: "",
+                                                                mediaType: "youtube",
+                                                                youtubeUrl: "",
+                                                                images: [],
                                                             });
                                                         }}
                                                     >
@@ -1989,7 +2508,10 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                                             setEditingProjectId(null);
                                                             setManualProject({
                                                                 title: "",
+                                                                role: "",
+                                                                date: "",
                                                                 description: "",
+                                                                keyContributions: "",
                                                                 githubUrl: "",
                                                                 liveUrl: "",
                                                                 technologies: "",
@@ -2009,7 +2531,7 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                             </div>
                         )}
 
-                        {activePage === "involvement" && selectedTemplate === "classic" && (
+                        {activePage === "involvement" && (
                             <div className="px-8 -mt-12">
                                 <div className="relative z-30 inline-block">
                                     <button 

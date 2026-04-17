@@ -168,7 +168,7 @@ def import_selected_repositories(clerk_id: str, repo_ids: Iterable[int]) -> Dict
 
         existing_projects.append(
             {
-                "id": len(existing_projects) + 1,
+                "id": repo.repo_id,
                 "title": repo.name,
                 "description": repo.description or "",
                 "githubUrl": repo.html_url,
