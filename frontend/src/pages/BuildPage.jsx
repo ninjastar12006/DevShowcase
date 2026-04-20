@@ -857,6 +857,12 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                 data = null;
             }
 
+            if (response.status === 401) {
+                alert("Your session expired. Please sign in again.");
+                navigate("/sign-in");
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error(data?.detail || data?.message || `Save failed with status ${response.status}`);
             }

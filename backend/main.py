@@ -6,6 +6,8 @@ from fastapi.responses import RedirectResponse
 from mongoengine import connect, disconnect
 import json
 from urllib.parse import quote
+import time
+from fastapi import Request
 
 from auth import get_current_user
 from config import FRONTEND_GITHUB_CALLBACK_URL, MONGODB_URI, FRONTEND_URL
@@ -56,7 +58,7 @@ app = FastAPI(lifespan=lifespan)
 # CORS configuration to allow requests from the Vite frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", FRONTEND_URL],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://devshowcase-frontend-one.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -65,6 +67,14 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"message": "DevShowcase backend is running"}
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+@app.get("/auth-timing")
+async def auth_timing(request: Request, user=Depends(get_current_user)):
+    return {"ok": True, "user_sub": user["payload"].get("sub")}
 
 @app.get("/protected")
 async def protected_route(user=Depends(get_current_user)):
