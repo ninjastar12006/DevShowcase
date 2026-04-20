@@ -246,18 +246,18 @@ async def github_sync(user=Depends(get_current_user)):
     }
 
 
-@app.post("/github/import-selected", response_model=GitHubSyncResponse)
+@app.post("/github/import-selected")
 async def github_import_selected(
     request: GitHubImportSelectedRequest,
     user=Depends(get_current_user),
 ):
     clerk_id = user["payload"]["sub"]
     result = import_selected_repositories(clerk_id, request.repo_ids)
-    portfolio = Portfolio.objects(clerk_id=clerk_id).first()
+
     return {
         "success": True,
         "imported_count": result["imported_count"],
-        "portfolio": json.loads(portfolio.to_json()) if portfolio else None,
+        "new_projects": result["new_projects"],
     }
 
 
