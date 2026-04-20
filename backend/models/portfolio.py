@@ -12,3 +12,4 @@ class Portfolio(Document):
     projects = ListField(DictField())
     involvement = DictField()
     githubSync = DictField()
+    published_portfolio = DictField(default=dict)

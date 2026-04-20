@@ -92,6 +92,8 @@ async def save_portfolio(
     # 3. Update the portfolio with the incoming data (Including new user info)
     portfolio.email = build_data.email
     portfolio.username = build_data.username
+
+    portfolio.published_portfolio = portfolio.published_portfolio or {}
     
     portfolio.template = build_data.template
     portfolio.primaryColor = build_data.primaryColor
@@ -108,6 +110,32 @@ async def save_portfolio(
         "clerk_id": clerk_id,
         "database_id": str(portfolio.id)
     }
+
+@app.post("/publish-portfolio")
+async def publish_portfolio(
+    user=Depends(get_current_user),
+    token: HTTPAuthorizationCredentials = Depends(security)
+):
+    clerk_id = user["payload"]["sub"]
+
+    portfolio = Portfolio.objects(clerk_id=clerk_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="No portfolio found for this user.")
+
+    portfolio.published_portfolio = {
+        "template": portfolio.template,
+        "primaryColor": portfolio.primaryColor,
+        "secondaryColor": portfolio.secondaryColor,
+        "about": portfolio.about,
+        "projects": portfolio.projects,
+        "involvement": portfolio.involvement,
+        "username": portfolio.username,
+        "email": portfolio.email,
+    }
+
+    portfolio.save()
+
+    return {"message": "Portfolio published successfully!"}
 
 # GET route to send the saved portfolio back to the frontend on load
 @app.get("/get-portfolio")
@@ -133,7 +161,10 @@ async def get_public_portfolio(username: str):
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
         
-    return json.loads(portfolio.to_json())
+    if not portfolio.published_portfolio:
+        raise HTTPException(status_code=404, detail="No published portfolio found")
+
+    return portfolio.published_portfolio
 
 
 @app.get("/auth/github/start")

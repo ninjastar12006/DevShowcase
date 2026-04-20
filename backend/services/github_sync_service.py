@@ -70,8 +70,13 @@ def _document_to_dict(document: RepositoryCache) -> Dict[str, Any]:
 def _redis_repo_key(clerk_id: str) -> str:
     return f"github_repos:{clerk_id}"
 
-def _is_cache_fresh(last_synced_at: datetime | None) -> bool:
-    if not last_synced_at: return False
+def _is_cache_fresh(last_synced_at):
+    if last_synced_at is None:
+        return False
+
+    if last_synced_at.tzinfo is None:
+        last_synced_at = last_synced_at.replace(tzinfo=timezone.utc)
+
     age_seconds = (datetime.now(timezone.utc) - last_synced_at).total_seconds()
     return age_seconds < GITHUB_REPO_CACHE_TTL_SECONDS
 
@@ -163,7 +168,7 @@ def import_selected_repositories(clerk_id: str, repo_ids: Iterable[int]) -> Dict
 
         existing_projects.append(
             {
-                "id": len(existing_projects) + 1,
+                "id": repo.repo_id,
                 "title": repo.name,
                 "description": repo.description or "",
                 "githubUrl": repo.html_url,

@@ -51,7 +51,7 @@ export default function HomePage() {
                                 after:content-[''] after:absolute after:left-0 after:-bottom-1
                                 after:h-[2px] after:w-full after:bg-white after:rounded-full after:opacity-80
                                 after:scale-x-0 hover:after:scale-x-100
-                                after:origin-center after:transition-transform after:duration-500">Go to Builder</Link>
+                                after:origin-center after:transition-transform after:duration-500">Build</Link>
                     </SignedIn>
                 </div>
                 <div className="pointer-events-none absolute left-0 right-0 top-full h-32 bg-gradient-to-b from-black via-black/50 to-black/0"/>
