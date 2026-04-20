@@ -166,7 +166,11 @@ async def get_portfolio(
 @app.get("/api/public/portfolio/{username}")
 async def get_public_portfolio(username: str):
     # Find the portfolio by the username
-    portfolio = Portfolio.objects(username=username).first()
+    portfolio = (
+        Portfolio.objects(username=username, published_portfolio__ne={})
+        .order_by("-id")
+        .first()
+    )
     
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")

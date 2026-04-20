@@ -1005,7 +1005,7 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
 
     return (
         <div className="flex h-screen overflow-hidden text-white bg-[rgb(25,25,25)]">
-            <aside className="w-64 h-full overflow-hidden border-r border-gray-700 flex flex-col p-4">
+            <aside className="w-64 h-full overflow-y-scroll border-r border-gray-700 flex flex-col p-4">
                 <div className="mb-6 pb-0 space-y-3">
                     <Link className="flex items-center" to="/">
                         <img src={logo} className="h-12 w-auto"/>
@@ -1926,11 +1926,11 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                                 </div>
 
                                                 <div
-                                                    className={`flex flex-col justify-center items-center ${
+                                                    className={`flex flex-col justify-center ${
                                                         hasMedia
                                                             ? index % 2 === 1
-                                                                ? "pr-0 order-2"
-                                                                : "pl-36 order-1"
+                                                                ? "mx-auto pr-8 order-2"
+                                                                : "mx-auto pl-8 order-1"
                                                             : "col-span-2 max-w-5xl mx-auto"
                                                     }`}
                                                 >
@@ -2228,9 +2228,6 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                                     <div className="pt-4 border-t border-gray-700">
                                         {projectInputMode === "github" ? (
                                             <div className="space-y-3">
-                                                <div className="rounded-xl border border-gray-700 p-4 text-gray-400">
-                                                    Connected repositories will go here
-                                                </div>
                                                 <h2 className="text-lg font-semibold text-white">Import a repository</h2>
                                                 {!githubStatus.connected ? (
                                                     <div className="space-y-3 rounded-xl border border-gray-700 p-4 text-gray-300">

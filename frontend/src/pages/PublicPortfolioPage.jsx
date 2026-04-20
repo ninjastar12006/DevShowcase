@@ -849,7 +849,7 @@ export default function PublicPortfolioPage() {
                                                         return match ? `https://www.youtube.com/embed/${match[1]}` : "";
                                                     })()}
                                                     title={`${project.title || "Project"} video`}
-                                                    className="pointer-events-none aspect-video w-full"
+                                                    className="aspect-video w-full"
                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                     allowFullScreen
                                                 />
