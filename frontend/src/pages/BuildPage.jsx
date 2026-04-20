@@ -745,7 +745,7 @@ export default function BuildPage() {
     const primaryColor = portfolioData.primaryColor;
     const secondaryColor = portfolioData.secondaryColor;
 
-const displayName = portfolioData.about.name.trim() || "Your Name";
+    const displayName = portfolioData.about.name.trim() || "Your Name";
     const displayYear = portfolioData.about.year.trim() || "Year";
     const displayMajor = portfolioData.about.major.trim() || "Major";
     const displayCollege = portfolioData.about.college.trim() || "College";
@@ -1005,7 +1005,7 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
 
     return (
         <div className="flex h-screen overflow-hidden text-white bg-[rgb(25,25,25)]">
-            <aside className="w-64 h-full overflow-y-scroll border-r border-gray-700 flex flex-col p-4">
+            <aside className="w-64 h-full overflow-y-auto border-r border-gray-700 flex flex-col p-4">
                 <div className="mb-6 pb-0 space-y-3">
                     <Link className="flex items-center" to="/">
                         <img src={logo} className="h-12 w-auto"/>
@@ -1150,16 +1150,6 @@ const displayName = portfolioData.about.name.trim() || "Your Name";
                             >
                                 Publish
                             </button>
-
-                            {/* --- SECRET ADMIN BUTTON --- */}
-                            {user?.publicMetadata?.role === "admin" && (
-                                <button
-                                    onClick={() => navigate('/admin-dashboard')}
-                                    className="mt-2 w-full rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 font-bold text-purple-300 transition hover:bg-purple-500/20"
-                                >
-                                    Admin Dashboard
-                                </button>
-                            )}
                         </div>
                     </div>
                 </div>
