@@ -52,7 +52,7 @@ export default function HomePage() {
         <div className="min-h-screen bg-[rgb(15,15,15)]">
             <div className="mx-auto max-w-7xl">
                 {/* NAVIGATION */}
-                <nav className="relative flex text-xl sticky top-0 h-16 w-full pl-4 pr-6 py-4 bg-[rgb(15,15,15)] z-50 justify-between items-center">
+                <nav className="relative flex text-xl sticky top-0 h-16 w-full pl-4 pr-6 py-4 bg-transparent z-50 justify-between items-center">
                     <div className="mt-2">
                         <Link className="flex items-center" to="/">
                             <img src={logo} className="h-12 w-auto" alt="Logo" />
@@ -64,7 +64,7 @@ export default function HomePage() {
                         {user?.publicMetadata?.role === "admin" && (
                             <button
                                 onClick={() => navigate('/admin-dashboard')}
-                                className="cursor-pointer mt-2 w-full rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 font-bold text-purple-300 transition hover:bg-purple-500/20"
+                                className="cursor-pointer mt-2 w-full rounded-xl border border-purple-500/50 bg-purple-500/10 backdrop-blur-md px-4 py-2 font-bold text-purple-300 transition hover:bg-purple-500/20"
                             >
                                 Admin Dashboard
                             </button>
