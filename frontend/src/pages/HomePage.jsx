@@ -3,6 +3,7 @@ import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import logo from "../assets/DevShowcaseLogo4.png";
 import logoText from "../assets/DevShowcaseLogo4Text.png";
 import { useUser } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 // --- IMPORT YOUR TEAM IMAGES HERE ---
 // Make sure these filenames match exactly what you put in your assets folder!
@@ -13,6 +14,8 @@ import timImg from "../assets/tim.jpeg";
 
 export default function HomePage() {
     const { user } = useUser();
+    const navigate = useNavigate();
+    
     const teamMembers = [
     {
         name: "Jackson Bailey",
